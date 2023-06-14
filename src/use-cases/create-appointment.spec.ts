@@ -20,4 +20,50 @@ describe("Create Appointment", () => {
       })
     ).resolves.toBeInstanceOf(Appointment);
   });
+
+  it("should not be able to create an appointment with overlapping dates", async () => {
+    const appointmentsRepository = new InMemoryAppointmentsRepository();
+    const createAppointment = new CreateAppointment(appointmentsRepository);
+
+    const startsAt = getFutureDate("2023-06-10");
+    const endsAt = getFutureDate("2023-06-15");
+
+    await createAppointment.execute({
+      customer: "John Doe",
+      startsAt,
+      endsAt,
+    });
+
+    expect(
+      createAppointment.execute({
+        customer: "John Doe",
+        startsAt: getFutureDate("2023-06-14"),
+        endsAt: getFutureDate("2023-06-18"),
+      })
+    ).rejects.toBeInstanceOf(Error);
+
+    expect(
+      createAppointment.execute({
+        customer: "John Doe",
+        startsAt: getFutureDate("2023-06-08"),
+        endsAt: getFutureDate("2023-06-12"),
+      })
+    ).rejects.toBeInstanceOf(Error);
+
+    expect(
+      createAppointment.execute({
+        customer: "John Doe",
+        startsAt: getFutureDate("2023-06-08"),
+        endsAt: getFutureDate("2023-06-17"),
+      })
+    ).rejects.toBeInstanceOf(Error);
+
+    expect(
+      createAppointment.execute({
+        customer: "John Doe",
+        startsAt: getFutureDate("2023-06-11"),
+        endsAt: getFutureDate("2023-06-12"),
+      })
+    ).rejects.toBeInstanceOf(Error);
+  });
 });
